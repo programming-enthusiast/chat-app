@@ -18,7 +18,7 @@
             </div>
 
             <div class="pb-3">
-                <div style="max-height: 470px; overflow: scroll;">
+                <div class="chat-overflow" style="max-height: 470px; ">
                     <!-- <div class="p-4 border-top">
                         <div>
                         </div>
@@ -77,7 +77,7 @@
                                                 {{ item.body }}
                                             </p>
                                             <p v-if="item.attachment" class="mb-0">
-                                                <img id="imageModalBox" :src="'/storage/attachments/' + item.attachment.split(',')[0]">
+                                                <img style="max-width: 250px;" id="imageModalBox" :src="'/storage/attachments/' + item.attachment.split(',')[0]">
                                             </p>
                                         </div>
                                     </div>
@@ -91,7 +91,7 @@
                     <form @submit.prevent="sendMessage">
                     <div class="row">
                         <div class="col-auto">
-                            <button type="button" class="btn btn-primary" @click="onUploadAttachmentClick"><span class="d-none d-sm-inline-block mr-2">Upload...</span></button>
+                            <button type="button" class="btn btn-primary" @click="onUploadAttachmentClick"><span>Upload...</span></button>
                             <input 
                                 class="upload-attachment" 
                                 id="file-upload" 
@@ -103,7 +103,7 @@
                             />
                         </div>
                         <div v-if="fileName" class="upload-file-name">
-                            {{ this.fileName }}
+                            {{ '📎' + (this.fileName.length > 12 ? this.fileName.slice(0, 11) + '...' : this.fileName) }}
                         </div>
                         <div class="col">
                             <div class="position-relative">
@@ -175,10 +175,11 @@
                 if (!this.currentUser)
                     return
                 const myProfile = JSON.parse(localStorage.getItem('me'))
-                if ((myProfile.id === data.to_id && this.currentUser.id === data.from_id)
-                    || (myProfile.id === data.from_id && this.currentUser.id === data.to_id)) {
+                if ((myProfile.id == data.to_id && this.currentUser.id == data.from_id)
+                    || (myProfile.id == data.from_id && this.currentUser.id == data.to_id)) {
                     const message = { body: data.message.message, from_id: data.message.from_id, to_id: data.message.to_id, attachment: data.message.attachment.join(',') }
                     this.messages.push(message)
+                    console.log('attached message======', message)
                 }
             },
             logout() {
@@ -225,18 +226,6 @@
                     const files = event.target.files
                     this.newMessage.attachment = files[0]
                     this.fileName = files[0].name;
-                    console.log('llllll')
-                    // let fileName = files[0].name
-                    // if (!fileName) {
-                    //     return;
-                    // }
-                    // this.fileName = fileName;
-                    // const fileReader = new FileReader()
-                    // fileReader.addEventListener('load', () => {
-                    //     this.newMessage.attachment = fileReader.result
-                    // })
-                    // fileReader.readAsDataURL(files[0])
-                    // this.newMessage.attachment = files[0]
                 } catch (error) {
                     console.log(error)
                 }
