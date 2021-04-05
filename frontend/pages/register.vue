@@ -80,14 +80,14 @@
                     this.error = true
                 }
                 else {
-
+                    let res
                     try {
-                        await axios.post(API_BASE_URL + '/register', { name: this.data.name, email: this.data.email, password: this.data.password, password_confirmation: this.data.password_confirmation })
+                        res = await axios.post(API_BASE_URL + '/register', { name: this.data.name, email: this.data.email, password: this.data.password, password_confirmation: this.data.password_confirmation })
+                        this.$router.push("/")
                     } catch (error) {
                         console.log(error)
+                        window.alert(error.message)
                     }
-
-                    // this.$router.push("/")
                 }
             }
         }
