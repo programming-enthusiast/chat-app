@@ -3,7 +3,6 @@
 namespace App;
 
 use App\Http\Models\Message;
-use App\Http\Models\Favorite;
 use Pusher\Pusher;
 use Illuminate\Support\Facades\Auth;
 use Exception;
@@ -137,18 +136,6 @@ class ChatMessenger
     }
 
     /**
-     * Return a message card with the given data.
-     *
-     * @param array $data
-     * @param string $viewType
-     * @return void
-     */
-    public function messageCard($data, $viewType = null){
-        $data['viewType'] = ($viewType) ? $viewType : $data['viewType'];
-        return view('layouts.messageCard',$data)->render();
-    }
-
-    /**
      * Default fetch messages query between a Sender and Receiver.
      *
      * @param int $user_id
@@ -226,50 +213,14 @@ class ChatMessenger
         // Get Unseen messages counter
         $unseenCounter = self::countUnseenMessages($user->id);
 
-        return view('layouts.listItem', [
+        return [
             'get' => 'users',
             'user' => $user,
             'lastMessage' => $lastMessage,
             'unseenCounter' => $unseenCounter,
             'type'=>'user',
             'id' => $messenger_id,
-        ])->render();
-    }
-
-    /**
-     * Check if a user in the favorite list
-     *
-     * @param int $user_id
-     * @return boolean
-     */
-    public function inFavorite($user_id){
-        return Favorite::where('user_id', Auth::user()->id)
-                        ->where('favorite_id', $user_id)->count() > 0
-                        ? true : false;
-
-    }
-
-    /**
-     * Make user in favorite list
-     *
-     * @param int $user_id
-     * @param int $star
-     * @return boolean
-     */
-    public function makeInFavorite($user_id, $action){
-        if ($action > 0) {
-            // Star
-            $star = new Favorite();
-            $star->id = rand(9,99999999);
-            $star->user_id = Auth::user()->id;
-            $star->favorite_id = $user_id;
-            $star->save();
-            return $star ? true : false;
-        }else{
-            // UnStar
-            $star = Favorite::where('user_id',Auth::user()->id)->where('favorite_id',$user_id)->delete();
-            return $star ? true : false;
-        }
+        ];
     }
 
     /**

@@ -70,22 +70,6 @@ Route::group([
      */
     Route::post('/chat/updateContacts', 'MessagesController@updateContactItem')->name('contacts.update');
 
-
-    /**
-     * Star in favorite list
-     */
-    Route::post('/chat/star', 'MessagesController@favorite')->name('star');
-
-    /**
-     * get favorites list
-     */
-    Route::post('/chat/favorites', 'MessagesController@getFavorites')->name('favorites');
-
-    /**
-     * Search in messenger
-     */
-    Route::post('/chat/search', 'MessagesController@search')->name('search');
-
     /**
      * Get all messengers
      */

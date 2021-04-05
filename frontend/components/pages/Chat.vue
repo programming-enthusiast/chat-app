@@ -177,7 +177,12 @@
                 const myProfile = JSON.parse(localStorage.getItem('me'))
                 if ((myProfile.id == data.to_id && this.currentUser.id == data.from_id)
                     || (myProfile.id == data.from_id && this.currentUser.id == data.to_id)) {
-                    const message = { body: data.message.message, from_id: data.message.from_id, to_id: data.message.to_id, attachment: data.message.attachment.join(',') }
+                    const message = { 
+                        body: data.message.message, 
+                        from_id: data.message.from_id, 
+                        to_id: data.message.to_id, 
+                        attachment: data.message.attachment[0] ? data.message.attachment.join(',') : null
+                    }
                     this.messages.push(message)
                     console.log('attached message======', message)
                 }

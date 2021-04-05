@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Response;
 use App\Http\Models\Message;
-use App\Http\Models\Favorite;
 use App\Facades\ChatMessenger;
 use App\User;
 use Illuminate\Support\Facades\Auth;
@@ -44,29 +43,6 @@ class MessagesController extends Controller
     }
 
     /**
-     * Returning the view of the app with the required data.
-     *
-     * @param int $id
-     * @return void
-     */
-    public function index($id = null)
-    {
-        // get current route
-        $route = (in_array(\Request::route()->getName(), ['user', config('chat.path')]))
-            ? 'user'
-            : \Request::route()->getName();
-
-        // prepare id
-        return view('pages.app', [
-            'id' => ($id == null) ? 0 : $route . '_' . $id,
-            'route' => $route,
-            'messengerColor' => Auth::user()->messenger_color,
-            'dark_mode' => Auth::user()->dark_mode < 1 ? 'light' : 'dark',
-        ]);
-    }
-
-
-    /**
      * Fetch data by id for (user/group)
      *
      * @param Request $request
@@ -74,9 +50,6 @@ class MessagesController extends Controller
      */
     public function idFetchData(Request $request)
     {
-        // Favorite
-        $favorite = ChatMessenger::inFavorite($request['id']);
-
         // User data
         if ($request['type'] == 'user') {
             $fetch = User::where('id', $request['id'])->first();
@@ -84,7 +57,6 @@ class MessagesController extends Controller
 
         // send the response
         return Response::json([
-            'favorite' => $favorite,
             'fetch' => $fetch,
             'user_avatar' => asset('/storage/' . config('chat.user_avatar.folder') . '/' . $fetch->avatar),
         ]);
@@ -282,83 +254,6 @@ class MessagesController extends Controller
     }
 
     /**
-     * Put a user in the favorites list
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function favorite(Request $request)
-    {
-        // check action [star/unstar]
-        if (ChatMessenger::inFavorite($request['user_id'])) {
-            // UnStar
-            ChatMessenger::makeInFavorite($request['user_id'], 0);
-            $status = 0;
-        } else {
-            // Star
-            ChatMessenger::makeInFavorite($request['user_id'], 1);
-            $status = 1;
-        }
-
-        // send the response
-        return Response::json([
-            'status' => @$status,
-        ], 200);
-    }
-
-    /**
-     * Get favorites list
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function getFavorites(Request $request)
-    {
-        $favoritesList = null;
-        $favorites = Favorite::where('user_id', Auth::user()->id);
-        foreach ($favorites->get() as $favorite) {
-            // get user data
-            $user = User::where('id', $favorite->favorite_id)->first();
-            $favoritesList .= view('layouts.favorite', [
-                'user' => $user,
-            ]);
-        }
-        // send the response
-        return Response::json([
-            'favorites' => $favorites->count() > 0
-                ? $favoritesList
-                : '<p class="message-hint"><span>Your favorite list is empty</span></p>',
-        ], 200);
-    }
-
-    /**
-     * Search in messenger
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function search(Request $request)
-    {
-        $getRecords = null;
-        $input = trim(filter_var($request['input'], FILTER_SANITIZE_STRING));
-        $records = User::where('name', 'LIKE', "%{$input}%");
-        foreach ($records->get() as $record) {
-            $getRecords .= view('layouts.listItem', [
-                'get' => 'search_item',
-                'type' => 'user',
-                'user' => $record,
-            ])->render();
-        }
-        // send the response
-        return Response::json([
-            'records' => $records->count() > 0
-                ? $getRecords
-                : '<p class="message-hint"><span>Nothing to show.</span></p>',
-            'addData' => 'html'
-        ], 200);
-    }
-
-    /**
      * Get all messengers
      *
      * @param Request $request
@@ -369,41 +264,10 @@ class MessagesController extends Controller
         $getRecords = null;
         $input = trim(filter_var($request['input'], FILTER_SANITIZE_STRING));
         $records = User::all();
-        // foreach ($records->get() as $record) {
-        //     $getRecords .= view('layouts.listItem', [
-        //         'get' => 'search_item',
-        //         'type' => 'user',
-        //         'user' => $record,
-        //     ])->render();
-        // }
+      
         // send the response
         return Response::json([
             'messengers' => $records
-        ], 200);
-    }
-
-
-    /**
-     * Get shared photos
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function sharedPhotos(Request $request)
-    {
-        $shared = ChatMessenger::getSharedPhotos($request['user_id']);
-        $sharedPhotos = null;
-
-        // shared with its template
-        for ($i = 0; $i < count($shared); $i++) {
-            $sharedPhotos .= view('layouts.listItem', [
-                'get' => 'sharedPhoto',
-                'image' => asset('storage/attachments/' . $shared[$i]),
-            ])->render();
-        }
-        // send the response
-        return Response::json([
-            'shared' => count($shared) > 0 ? $sharedPhotos : '<p class="message-hint"><span>Nothing shared yet</span></p>',
         ], 200);
     }
 
