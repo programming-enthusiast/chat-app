@@ -45,6 +45,7 @@ RUN chown -R www-data:www-data /var/www
 RUN composer install
 
 # Expose port 9000 and start php-fpm server
+RUN php artisan passport:install
 RUN php artisan storage:link
 RUN php artisan config:clear
 RUN php artisan key:generate
