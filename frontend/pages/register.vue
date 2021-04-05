@@ -11,7 +11,7 @@
                             <i class="uil uil-exclamation-octagon mr-2"></i>
                             Invalid data!
                         </div>
-                        <form method="POST" @submit.prevent="login">
+                        <form method="POST" @submit.prevent="register">
 
                             <div class="form-group">
                                 <label for="email">Name</label>
@@ -71,19 +71,19 @@
             }
         },
         methods: {
-            async login() {
+            async register() {
                 if (this.data.name === "" || this.data.email === "" || this.data.password === "" || this.data.password_confirmation === "") {
                     this.error = true
                 }
                 else {
 
                     try {
-                        await axios.post(API_BASE_URL + 'register', { name: this.data.name, email: this.data.email, password: this.data.password, password_confirmation: this.data.password_confirmation })
+                        await axios.post(API_BASE_URL + '/register', { name: this.data.name, email: this.data.email, password: this.data.password, password_confirmation: this.data.password_confirmation })
                     } catch (error) {
                         console.log(error)
                     }
 
-                    this.$router.push("/")
+                    // this.$router.push("/")
                 }
             }
         }

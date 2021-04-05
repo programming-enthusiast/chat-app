@@ -18,20 +18,13 @@ use Illuminate\Http\Request;
 
 Route::post('/register', 'AuthController@register');
 Route::post('/login', 'AuthController@login');
-Route::post('/logout', 'AuthController@logout');
-
-
-Route::get('/user', 'AuthController@user');
-
-
-
-
-
 
 
 Route::group([
     'middleware' => 'auth:api'
 ], function () {
+    Route::post('/logout', 'AuthController@logout');
+    Route::get('/user', 'AuthController@user');
     /*
     * This is the main app route [Chat Messenger]
     */
@@ -92,6 +85,11 @@ Route::group([
      * Search in messenger
      */
     Route::post('/chat/search', 'MessagesController@search')->name('search');
+
+    /**
+     * Get all messengers
+     */
+    Route::get('/chat/messengers', 'MessagesController@getAllMessengers')->name('messengers');
 
     /**
      * Get shared photos

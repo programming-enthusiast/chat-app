@@ -18,29 +18,28 @@
             </div>
 
             <div class="pb-3">
-                <div style="max-height: 470px;">
-                    <div class="p-4 border-top">
+                <div style="max-height: 470px; overflow: scroll;">
+                    <!-- <div class="p-4 border-top">
                         <div>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="p-4 border-top">
                         <div>
-                            <h5 class="font-size-16 mb-3"><i class="uil uil-user mr-1"></i> Online</h5>
+                            <h5 class="font-size-16 mb-3"><i class="uil uil-user mr-1"></i> Users</h5>
 
                             <ul class="list-unstyled chat-list">
-                                <li v-for="item in onlineUsers">
+                                <li v-for="messenger in messengers" @click="onUserClick(messenger)">
                                     <a href="javascript:void(0)">
                                         <div class="media align-items-center">
                                             
                                             <div class="avatar-xs mr-3">
                                                 <span class="avatar-title rounded-circle bg-soft-primary text-primary">
-                                                    {{ item.slice(0, 1).toUpperCase() }}
                                                 </span>
                                             </div>
                                             
                                             <div class="media-body overflow-hidden">
-                                                <h5 class="text-truncate font-size-14 mb-1">{{ item }}</h5>
+                                                <h5 class="text-truncate font-size-14 mb-1">{{ messenger.name }}</h5>
                                             </div>
                                         </div>
                                     </a>
@@ -54,7 +53,7 @@
         </div>
         <!-- end chat-leftsidebar -->
 
-        <div class="w-100 user-chat mt-4 mt-sm-0 ml-lg-1">
+        <div v-if="currentUser" class="w-100 user-chat mt-4 mt-sm-0 ml-lg-1">
             <div class="card">
                 <div class="p-3 px-lg-4 border-bottom">
                     <div class="row">
@@ -69,13 +68,16 @@
                             <li class="chat-day-title"> 
                                 <div class="title">Start chat with Messenger</div>
                             </li>
-                            <li v-for="item in messages" :class="{ 'right': item.sender }">
+                            <li v-for="item in messages" :class="{ 'right': me.id === item.to_id }">
                                 <div class="conversation-list">
                                     <div class="ctext-wrap">
                                         <div class="ctext-wrap-content">
                                             <h5 class="font-size-14 conversation-name"><a href="javascript:void(0)" class="text-dark">{{ }}</a> <span class="d-inline-block font-size-12 text-muted ml-2">{{ item.time }}</span></h5>
                                             <p class="mb-0">
-                                                {{ item.text }}
+                                                {{ item.body }}
+                                            </p>
+                                            <p v-if="item.attachment" class="mb-0">
+                                                <img id="imageModalBox" :src="'/storage/attachments/' + item.attachment.split(',')[0]">
                                             </p>
                                         </div>
                                     </div>
@@ -86,7 +88,7 @@
                 </div>
 
                 <div class="p-3 chat-input-section">
-                    <form @submit.prevent="sendNewMessage">
+                    <form @submit.prevent="sendMessage">
                     <div class="row">
                         <div class="col-auto">
                             <button type="button" class="btn btn-primary" @click="onUploadAttachmentClick"><span class="d-none d-sm-inline-block mr-2">Upload...</span></button>
@@ -121,72 +123,123 @@
 
 <script>
     import '~/plugins/VueChatScroll'
+    import Pusher from 'pusher-js'
+    import axios from 'axios'
+    import { API_BASE_URL } from '~/shared/const'
 
     export default {
+        props: {
+            messengers: Array,
+            pusher: Object,
+            channel: Object
+        },
         mounted() {
-            
+            this.channel.bind('messaging', (data) => {
+                console.log('this component::::::', this)
+                console.log('channel subscribing:::::::', data)
+                this.onMessageNotification(data)
+            })
         },
         data() {
+            
             return {
                 authData: {
                     username: "",
                 },
                 messages: [],
                 newMessage: {
-                    text: ""
+                    text: "",
+                    attachment: null
                 },
                 onlineUsers: [],
                 image: null,
-                fileName: ''
+                fileName: '',
+                currentUser: null,
+                me: JSON.parse(localStorage.getItem('me'))
             }
         },
         methods: {
-            async logout() {
-                await this.$store.dispatch('logout')
+            async onUserClick(user) {
+                this.currentUser = user
+                console.log('clicked::', user)
+                const options = {
+                    headers: { 
+                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    }
+                };
+                const res = await axios.post(API_BASE_URL + '/chat/fetchMessages', {id: user.id}, options)
+                console.log(res.data)
+                this.messages = res.data.messages
+            },
+            onMessageNotification(data) {
+                if (!this.currentUser)
+                    return
+                const myProfile = JSON.parse(localStorage.getItem('me'))
+                if ((myProfile.id === data.to_id && this.currentUser.id === data.from_id)
+                    || (myProfile.id === data.from_id && this.currentUser.id === data.to_id)) {
+                    const message = { body: data.message.message, from_id: data.message.from_id, to_id: data.message.to_id, attachment: data.message.attachment.join(',') }
+                    this.messages.push(message)
+                }
+            },
+            logout() {
+                localStorage.setItem('access_token', null)
+                localStorage.setItem('me', null)
                 this.redirectToLogin()
             },
-            
-            outputUsers(users) {
-                // this.onlineUsers = []
-                // for (let index = 0; index < users.length; index++) {
-                //     this.onlineUsers.push(users[index].username)
-                // }
-            },
-            outputMessage(message) {
-                // if (message.username === this.authData.username) {
-                //     message.sender = true
-                // }
-                // else {
-                //     message.sender = false
-                // }
-                // this.messages.push(message)
-            },
-            sendNewMessage() {
-                // const message = this.newMessage.text
-
-                // this.newMessage.text = ""
-
-                // this.socket.emit('chatMessage', message)
+            async sendMessage() {
+                const options = {
+                    headers: { 
+                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    }
+                };
+                console.log('++++++++++++++', this.newMessage)
+                const formData = new FormData();
+                var imagefile = document.querySelector('#file');
+                formData.append("file", this.newMessage.attachment);
+                formData.append("id", this.currentUser.id);
+                formData.append("message", this.newMessage.text);
+                formData.append("type", 'user');
+                try {
+                    const res = await axios.post(
+                        API_BASE_URL + '/chat/sendMessage', formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data',
+                                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                            }
+                    })
+                    this.newMessage.text = ''
+                    this.newMessage.attachment = null
+                    this.fileName = ''
+                } catch (error) {
+                    window.alert(error)
+                }
             },
             redirectToLogin() {
-                // this.$router.push("login")
+                this.$router.push("login")
             },
             onUploadAttachmentClick() {
                 this.$refs.fileUpload.click()
             },
             onFilePicked(event) {
-                const files = event.target.files
-                let fileName = files[0].name
-                if (!fileName) {
-                    return;
+                try {
+                    const files = event.target.files
+                    this.newMessage.attachment = files[0]
+                    this.fileName = files[0].name;
+                    console.log('llllll')
+                    // let fileName = files[0].name
+                    // if (!fileName) {
+                    //     return;
+                    // }
+                    // this.fileName = fileName;
+                    // const fileReader = new FileReader()
+                    // fileReader.addEventListener('load', () => {
+                    //     this.newMessage.attachment = fileReader.result
+                    // })
+                    // fileReader.readAsDataURL(files[0])
+                    // this.newMessage.attachment = files[0]
+                } catch (error) {
+                    console.log(error)
                 }
-                this.fileName = fileName;
-                const fileReader = new FileReader()
-                fileReader.addEventListener('load', () => {
-                    this.imageUrl = fileReader.result
-                })
-                fileReader.readAsDataURL(files[0])
-                this.image = files[0]
             }
         },
     }

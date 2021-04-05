@@ -70,19 +70,27 @@
                     this.error = true
                 }
                 else {
-
                     try {
-                        await axios.post(API_BASE_URL + 'login', { email: this.data.email, password: this.data.password })
+                        const res = await axios.post(API_BASE_URL + '/login', { email: this.data.email, password: this.data.password })
+                        localStorage.setItem('access_token', res.data.access_token)
+                        console.log('=======', res.access_token, res)
+
+                        const options = {
+                            headers: { 
+                                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                            }
+                        };
+                        const userData = await axios.get(API_BASE_URL + '/user', options)
+                        localStorage.setItem('me', JSON.stringify(userData.data))
+                        this.$router.push("/")
                     } catch (error) {
-                        console.log(error)
+                        if (error.message === 'Request failed with status code 401') {
+                            window.alert('Invalid email or passpord!')    
+                        } else {
+                            window.alert(error.message)
+                        }
+                        console.log(JSON.stringify(error))
                     }
-
-                    await this.$store.dispatch('login', {
-                        email: this.data.email,
-                        password: this.data.password
-                    })
-
-                    this.$router.push("/")
                 }
             }
         }

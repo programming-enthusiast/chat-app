@@ -23,6 +23,7 @@ class MessagesController extends Controller
      */
     public function pusherAuth(Request $request)
     {
+        error_log($request);
         // Auth data
         $authData = json_encode([
             'user_id' => Auth::user()->id,
@@ -149,7 +150,7 @@ class MessagesController extends Controller
                 'type' => $request['type'],
                 'from_id' => Auth::user()->id,
                 'to_id' => $request['id'],
-                'body' => trim(htmlentities($request['message'])),
+                'body' => $request['message'],
                 'attachment' => ($attachment) ? $attachment . ',' . $attachment_title : null,
             ]);
 
@@ -160,7 +161,7 @@ class MessagesController extends Controller
             ChatMessenger::push('private-chat', 'messaging', [
                 'from_id' => Auth::user()->id,
                 'to_id' => $request['id'],
-                'message' => ChatMessenger::messageCard($messageData, 'default')
+                'message' => $messageData
             ]);
         }
 
@@ -169,7 +170,7 @@ class MessagesController extends Controller
             'status' => '200',
             'error' => $error_msg ? 1 : 0,
             'error_msg' => $error_msg,
-            'message' => ChatMessenger::messageCard(@$messageData),
+            'message' => $messageData,
             'tempID' => $request['temporaryMsgId'],
         ]);
     }
@@ -190,18 +191,18 @@ class MessagesController extends Controller
         $messages = $query->get();
 
         // if there is a messages
-        if ($query->count() > 0) {
-            foreach ($messages as $message) {
-                $allMessages .= ChatMessenger::messageCard(
-                    ChatMessenger::fetchMessage($message->id)
-                );
-            }
+        // if ($query->count() > 0) {
+        //     foreach ($messages as $message) {
+        //         $allMessages .= ChatMessenger::messageCard(
+        //             ChatMessenger::fetchMessage($message->id)
+        //         );
+        //     }
             // send the response
             return Response::json([
                 'count' => $query->count(),
-                'messages' => $allMessages,
+                'messages' => $messages,
             ]);
-        }
+        // }
         // send the response
         return Response::json([
             'count' => $query->count(),
@@ -356,6 +357,31 @@ class MessagesController extends Controller
             'addData' => 'html'
         ], 200);
     }
+
+    /**
+     * Get all messengers
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function getAllMessengers(Request $request)
+    {
+        $getRecords = null;
+        $input = trim(filter_var($request['input'], FILTER_SANITIZE_STRING));
+        $records = User::all();
+        // foreach ($records->get() as $record) {
+        //     $getRecords .= view('layouts.listItem', [
+        //         'get' => 'search_item',
+        //         'type' => 'user',
+        //         'user' => $record,
+        //     ])->render();
+        // }
+        // send the response
+        return Response::json([
+            'messengers' => $records
+        ], 200);
+    }
+
 
     /**
      * Get shared photos
