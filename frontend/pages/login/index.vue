@@ -28,6 +28,10 @@
                                 <label class="custom-control-label" for="auth-remember-check">Remember me</label>
                             </div>
                             
+                            <div>
+                                <a href="/register">sign up</a>
+                            </div>
+                            
                             <div class="mt-3 text-right">
                                 <button class="btn btn-primary w-sm waves-effect waves-light" type="submit">Log In</button>
                             </div>

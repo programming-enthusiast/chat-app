@@ -32,6 +32,10 @@
                                 <label for="confirmPassword">Confirm password</label>
                                 <input type="password" class="form-control" id="confirm_password" placeholder="Enter your password" v-model="data.password_confirmation">
                             </div>
+
+                            <div>
+                                <a href="/login">log in</a>
+                            </div>
                             
                             <div class="mt-3 text-right">
                                 <button class="btn btn-primary w-sm waves-effect waves-light" type="submit">Register</button>
